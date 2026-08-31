@@ -207,5 +207,11 @@
     <None Include="resources\shaders\trackEdge.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="resources\shaders\toonOutline.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="resources\shaders\toonOutline.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

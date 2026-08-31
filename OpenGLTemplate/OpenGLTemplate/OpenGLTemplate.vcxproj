@@ -189,6 +189,8 @@
     <None Include="resources\shaders\pyramidShader.vert" />
     <None Include="resources\shaders\trackEdge.frag" />
     <None Include="resources\shaders\trackEdge.vert" />
+    <None Include="resources\shaders\toonOutline.frag" />
+    <None Include="resources\shaders\toonOutline.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

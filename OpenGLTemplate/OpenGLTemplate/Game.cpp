@@ -97,6 +97,7 @@ Game::Game() : m_gameWindow(GameWindow::GetInstance())
 	m_pCylinder = NULL;
 	m_pPyramidProgram = NULL;
 	m_pEdgeMarkerProgram = NULL;
+	m_pOutlineProgram = NULL;
 	m_pBrightFilterProgram = NULL;
 	m_pBloomCompositeProgram = NULL;
 	m_pBlurProgram = NULL;
@@ -139,6 +140,7 @@ Game::~Game()
 	if (m_pCylinder) { delete m_pCylinder; m_pCylinder = NULL; }
 	if (m_pPyramidProgram) { delete m_pPyramidProgram; m_pPyramidProgram = NULL; }
 	if (m_pEdgeMarkerProgram) { delete m_pEdgeMarkerProgram; m_pEdgeMarkerProgram = NULL; }
+	if (m_pOutlineProgram) { delete m_pOutlineProgram; m_pOutlineProgram = NULL; }
 	if (m_pBrightFilterProgram) { delete m_pBrightFilterProgram; m_pBrightFilterProgram = NULL; }
 	if (m_pBloomCompositeProgram) { delete m_pBloomCompositeProgram; m_pBloomCompositeProgram = NULL; }
 	if (m_pBlurProgram) { delete m_pBlurProgram; m_pBlurProgram = NULL; }
@@ -206,6 +208,17 @@ void Game::Initialise()
 	m_pEdgeMarkerProgram->AddShaderToProgram(&edgeVertShader);
 	m_pEdgeMarkerProgram->AddShaderToProgram(&edgeFragShader);
 	m_pEdgeMarkerProgram->LinkProgram();
+
+	// Toon outline shader set up (inverted hull technique)
+	CShader outlineVertShader;
+	outlineVertShader.LoadShader("resources\\shaders\\toonOutline.vert", GL_VERTEX_SHADER);
+	CShader outlineFragShader;
+	outlineFragShader.LoadShader("resources\\shaders\\toonOutline.frag", GL_FRAGMENT_SHADER);
+	m_pOutlineProgram = new CShaderProgram;
+	m_pOutlineProgram->CreateProgram();
+	m_pOutlineProgram->AddShaderToProgram(&outlineVertShader);
+	m_pOutlineProgram->AddShaderToProgram(&outlineFragShader);
+	m_pOutlineProgram->LinkProgram();
 
 	// Setup shadow mapping
 	CShader shadowVert, shadowFrag;
@@ -1350,6 +1363,17 @@ void Game::Render()
 	pMainProgram->SetUniform("bUseTexture", true);
 	pMainProgram->SetUniform("material1.Md", glm::vec3(1.0f));
 	pMainProgram->SetUniform("material1.Ma", glm::vec3(1.0f));
+
+	// Draws an inflated, backface-only copy of the car behind the real mesh so a thin outline pokes out around its silhouette
+	glCullFace(GL_FRONT);
+	m_pOutlineProgram->UseProgram();
+	m_pOutlineProgram->SetUniform("projMatrix", m_pCamera->GetPerspectiveProjectionMatrix());
+	m_pOutlineProgram->SetUniform("viewMatrix", viewMatrix);
+	m_pOutlineProgram->SetUniform("modelMatrix", carModel);
+	m_pOutlineProgram->SetUniform("outlineThickness", 0.025f);
+	m_pOutlineProgram->SetUniform("outlineColour", glm::vec3(0.0f));
+	m_pCarMesh->Render();
+	glCullFace(GL_BACK);
 
 	CShaderProgram* pReflectProgram = (*m_pShaderPrograms)[2];
 	pReflectProgram->UseProgram();

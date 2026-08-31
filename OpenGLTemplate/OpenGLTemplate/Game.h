@@ -65,6 +65,7 @@ private:
 	CShaderProgram* m_pInstancedProgram;
 	CShaderProgram* m_pPyramidProgram;
 	CShaderProgram* m_pEdgeMarkerProgram;
+	CShaderProgram* m_pOutlineProgram;
 	CShaderProgram* m_pBrightFilterProgram;
 	CShaderProgram* m_pBloomCompositeProgram;
 	CShaderProgram* m_pBlurProgram;
