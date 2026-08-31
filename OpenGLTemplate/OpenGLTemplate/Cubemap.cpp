@@ -58,28 +58,33 @@ void CCubemap::Create(string sPositiveX, string sNegativeX, string sPositiveY, s
 	glGenTextures(1, &m_uiTexture);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, m_uiTexture);
 
-	BYTE* pbImagePosX, * pbImageNegX, * pbImagePosY, * pbImageNegY, * pbImagePosZ, * pbImageNegZ;
+	BYTE* pbImagePosX = nullptr, * pbImageNegX = nullptr, * pbImagePosY = nullptr, * pbImageNegY = nullptr, * pbImagePosZ = nullptr, * pbImageNegZ = nullptr;
 
-	LoadTexture(sPositiveX, &pbImagePosX, iWidth, iHeight);
-	LoadTexture(sNegativeX, &pbImageNegX, iWidth, iHeight);
-	LoadTexture(sPositiveY, &pbImagePosY, iWidth, iHeight);
-	LoadTexture(sNegativeY, &pbImageNegY, iWidth, iHeight);
-	LoadTexture(sPositiveZ, &pbImagePosZ, iWidth, iHeight);
-	LoadTexture(sNegativeZ, &pbImageNegZ, iWidth, iHeight);
-
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, iWidth, iHeight, 0, GL_BGR, GL_UNSIGNED_BYTE, pbImagePosX);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, iWidth, iHeight, 0, GL_BGR, GL_UNSIGNED_BYTE, pbImageNegX);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, iWidth, iHeight, 0, GL_BGR, GL_UNSIGNED_BYTE, pbImagePosY);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, iWidth, iHeight, 0, GL_BGR, GL_UNSIGNED_BYTE, pbImageNegY);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, iWidth, iHeight, 0, GL_BGR, GL_UNSIGNED_BYTE, pbImagePosZ);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, iWidth, iHeight, 0, GL_BGR, GL_UNSIGNED_BYTE, pbImageNegZ);
-
-	delete[] pbImagePosX;
-	delete[] pbImageNegX;
-	delete[] pbImagePosY;
-	delete[] pbImageNegY;
-	delete[] pbImagePosZ;
-	delete[] pbImageNegZ;
+	// Only uploads and frees a face if it actually loaded, so a missing file doesn't touch a null pointer
+	if (LoadTexture(sPositiveX, &pbImagePosX, iWidth, iHeight)) {
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, iWidth, iHeight, 0, GL_BGR, GL_UNSIGNED_BYTE, pbImagePosX);
+		delete[] pbImagePosX;
+	}
+	if (LoadTexture(sNegativeX, &pbImageNegX, iWidth, iHeight)) {
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, iWidth, iHeight, 0, GL_BGR, GL_UNSIGNED_BYTE, pbImageNegX);
+		delete[] pbImageNegX;
+	}
+	if (LoadTexture(sPositiveY, &pbImagePosY, iWidth, iHeight)) {
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, iWidth, iHeight, 0, GL_BGR, GL_UNSIGNED_BYTE, pbImagePosY);
+		delete[] pbImagePosY;
+	}
+	if (LoadTexture(sNegativeY, &pbImageNegY, iWidth, iHeight)) {
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, iWidth, iHeight, 0, GL_BGR, GL_UNSIGNED_BYTE, pbImageNegY);
+		delete[] pbImageNegY;
+	}
+	if (LoadTexture(sPositiveZ, &pbImagePosZ, iWidth, iHeight)) {
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, iWidth, iHeight, 0, GL_BGR, GL_UNSIGNED_BYTE, pbImagePosZ);
+		delete[] pbImagePosZ;
+	}
+	if (LoadTexture(sNegativeZ, &pbImageNegZ, iWidth, iHeight)) {
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, iWidth, iHeight, 0, GL_BGR, GL_UNSIGNED_BYTE, pbImageNegZ);
+		delete[] pbImageNegZ;
+	}
 
 	glGenSamplers(1, &m_uiSampler);
 	glSamplerParameteri(m_uiSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

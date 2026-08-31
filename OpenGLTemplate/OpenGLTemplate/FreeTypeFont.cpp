@@ -12,16 +12,6 @@ CFreeTypeFont::CFreeTypeFont()
 CFreeTypeFont::~CFreeTypeFont()
 {}
 
-/*-----------------------------------------------
-
-Name:	createChar
-
-Params:	iIndex - character index in Unicode.
-
-Result:	Creates one single character (its
-		texture).
-
-/*---------------------------------------------*/
 inline int next_p2(int n) { int res = 1; while (res < n) res <<= 1; return res; }
 
 void CFreeTypeFont::CreateChar(int index)

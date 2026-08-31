@@ -6,7 +6,7 @@
 // - Manual surface normal mathematics for accurate lighting
 // - Hardware Instancing support via glDrawArraysInstanced (used for particles)
 // ---------------------------------------------------------
-#include "Common.h"
+#include "../Common.h"
 #include "Pyramid.h"
 
 CPyramid::CPyramid() : m_size(0.0f), m_vao(0) {}

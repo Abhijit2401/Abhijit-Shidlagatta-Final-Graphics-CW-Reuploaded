@@ -43,18 +43,17 @@ Source code drawn from a number of sources and examples, including contributions
 #include <fstream>
 #include "Camera.h"
 #include "Skybox.h"
-#include "Plane.h"
+#include "Shapes/Plane.h"
 #include "Shaders.h"
 #include "FreeTypeFont.h"
-#include "Sphere.h"
+#include "Shapes/Sphere.h"
 #include "MatrixStack.h"
 #include "OpenAssetImportMesh.h"
 #include "Audio.h"
-#include "Pyramid.h"
-#include "Track.h"
+#include "Shapes/Pyramid.h"
 #include "CCatmullRom.h"
 #include <cstdlib>
-#include "CCylinder.h"
+#include "Shapes/CCylinder.h"
 
 // Map settings preset
 const glm::vec3 SUN_DIRECTION = glm::normalize(glm::vec3(-1.0f, 0.15f, -0.4f));
@@ -96,14 +95,16 @@ Game::Game() : m_gameWindow(GameWindow::GetInstance())
 	m_pPyramid = NULL;
 	m_pCylinder = NULL;
 	m_pPyramidProgram = NULL;
+	m_pEdgeMarkerProgram = NULL;
 	m_pBrightFilterProgram = NULL;
 	m_pBloomCompositeProgram = NULL;
 	m_pBlurProgram = NULL;
 	m_pInstancedProgram = NULL;
 	m_pCatmullRom = NULL;
-	m_pTrack = NULL;
 	m_pHighResolutionTimer = NULL;
 	m_pAudio = NULL;
+	m_pGrassMesh = NULL;
+	m_pGrassProgram = NULL;
 
 	m_t = 0.0f;
 	m_dt = 0.0;
@@ -136,13 +137,15 @@ Game::~Game()
 	if (m_pPyramid) { delete m_pPyramid; m_pPyramid = NULL; }
 	if (m_pCylinder) { delete m_pCylinder; m_pCylinder = NULL; }
 	if (m_pPyramidProgram) { delete m_pPyramidProgram; m_pPyramidProgram = NULL; }
+	if (m_pEdgeMarkerProgram) { delete m_pEdgeMarkerProgram; m_pEdgeMarkerProgram = NULL; }
 	if (m_pBrightFilterProgram) { delete m_pBrightFilterProgram; m_pBrightFilterProgram = NULL; }
 	if (m_pBloomCompositeProgram) { delete m_pBloomCompositeProgram; m_pBloomCompositeProgram = NULL; }
 	if (m_pBlurProgram) { delete m_pBlurProgram; m_pBlurProgram = NULL; }
 	if (m_pInstancedProgram) { delete m_pInstancedProgram; m_pInstancedProgram = NULL; }
 	if (m_pCatmullRom) { delete m_pCatmullRom; m_pCatmullRom = NULL; }
-	if (m_pTrack) { delete m_pTrack; m_pTrack = NULL; }
 	if (m_pAudio) { delete m_pAudio; m_pAudio = NULL; }
+	if (m_pGrassMesh) { delete m_pGrassMesh; m_pGrassMesh = NULL; }
+	if (m_pGrassProgram) { delete m_pGrassProgram; m_pGrassProgram = NULL; }
 
 	if (m_pShaderPrograms != NULL) {
 		for (unsigned int i = 0; i < m_pShaderPrograms->size(); i++)
@@ -172,6 +175,7 @@ void Game::Initialise()
 	m_pCatmullRom->CreateCentreline();
 	m_pCatmullRom->CreateOffsetCurves();
 	m_pCatmullRom->CreateTrack("resources\\textures\\", "grass_floor.png", "dirtpile01.jpg");
+	m_pCatmullRom->CreateEdgeMarkers();
 
 	m_pHorseMesh = new COpenAssetImportMesh;
 	m_pCarMesh = new COpenAssetImportMesh;
@@ -190,6 +194,17 @@ void Game::Initialise()
 	m_pPyramidProgram->AddShaderToProgram(&pyrVertShader);
 	m_pPyramidProgram->AddShaderToProgram(&pyrFragShader);
 	m_pPyramidProgram->LinkProgram();
+
+	// Track edge marker shader set up
+	CShader edgeVertShader;
+	edgeVertShader.LoadShader("resources\\shaders\\trackEdge.vert", GL_VERTEX_SHADER);
+	CShader edgeFragShader;
+	edgeFragShader.LoadShader("resources\\shaders\\trackEdge.frag", GL_FRAGMENT_SHADER);
+	m_pEdgeMarkerProgram = new CShaderProgram;
+	m_pEdgeMarkerProgram->CreateProgram();
+	m_pEdgeMarkerProgram->AddShaderToProgram(&edgeVertShader);
+	m_pEdgeMarkerProgram->AddShaderToProgram(&edgeFragShader);
+	m_pEdgeMarkerProgram->LinkProgram();
 
 	// Setup shadow mapping
 	CShader shadowVert, shadowFrag;
@@ -737,7 +752,7 @@ void Game::UpdatePhysicsAndInput()
 	float turnSpeed = 0.001f * (float)m_dt;
 	bool isSteering = false;
 
-	// sisables steering when the player is in free cam (mode 4)
+	// disables steering when the player is in free cam (mode 4)
 	if (m_cameraMode != 4 && abs(m_cameraSpeed) > 0.001f) {
 		float actualTurnSpeed = (m_cameraSpeed >= 0.0f) ? turnSpeed : -turnSpeed;
 		if (GetKeyState('A') & 0x80) { m_steerAngle += actualTurnSpeed; isSteering = true; }
@@ -787,7 +802,7 @@ void Game::UpdatePhysicsAndInput()
 		);
 	}
 
-	// Updates the camera position and orientation based on currrent camera mode
+	// Updates the camera position and orientation based on current camera mode
 	glm::vec3 cameraPosition, viewTarget, upVector;
 	if (m_cameraMode == 1) {
 		cameraPosition = m_playerPosition + (B * 4.0f) + (T * 2.0f) + shakeOffset;
@@ -863,7 +878,7 @@ void Game::UpdateCollisions()
 
 void Game::UpdateParticles()
 {
-	// Updates the position of the background particles based on the camera speed and resets their position when they go past teh screen to create a continuous particle effect
+	// Updates the position of the background particles based on the camera speed and resets their position when they go past the screen to create a continuous particle effect
 	for (auto& p : m_particles) {
 		p.offset.x -= m_cameraSpeed * p.speedMultiplier * 90.0f * (float)m_dt;
 		if (p.offset.x < -40.0f) {
@@ -1287,6 +1302,7 @@ void Game::Render()
 	pMainProgram->SetUniform("bIsTree", false);
 
 	pMainProgram->SetUniform("material1.Ms", glm::vec3(0.8f));
+	pMainProgram->SetUniform("bCelShading", true);
 	for (int i = 0; i < m_barrelTransforms.size(); i++) {
 		if (!IsInFrustum(glm::vec3(m_barrelTransforms[i][3]), cullPos, cullDir)) continue;
 		glm::mat4 modelView = modelViewMatrixStack.Top() * m_barrelTransforms[i];
@@ -1305,6 +1321,7 @@ void Game::Render()
 		pMainProgram->SetUniform("matrices.normalMatrix", m_pCamera->ComputeNormalMatrix(modelView));
 		m_pPyramid->Render();
 	}
+	pMainProgram->SetUniform("bCelShading", false);
 	pMainProgram->SetUniform("bUseTexture", true);
 	pMainProgram->SetUniform("material1.Md", glm::vec3(1.0f));
 	pMainProgram->SetUniform("material1.Ma", glm::vec3(1.0f));
@@ -1326,6 +1343,7 @@ void Game::Render()
 	float pulse = (sin(m_t * 5.0f) * 0.5f) + 1.5f;
 	pMainProgram->SetUniform("material1.Md", glm::vec3(0.3f, 0.0f, 0.3f) * pulse);
 	pMainProgram->SetUniform("material1.Ma", glm::vec3(0.3f, 0.0f, 0.3f) * pulse);
+	pMainProgram->SetUniform("bCelShading", true);
 	for (const auto& orb : m_boostOrbs) {
 		if (!orb.active || !IsInFrustum(orb.originalPosition, cullPos, cullDir)) continue;
 		modelViewMatrixStack.Push();
@@ -1337,6 +1355,7 @@ void Game::Render()
 		m_pSphere->Render();
 		modelViewMatrixStack.Pop();
 	}
+	pMainProgram->SetUniform("bCelShading", false);
 	pMainProgram->SetUniform("material1.Md", glm::vec3(1.0f));
 	pMainProgram->SetUniform("material1.Ma", glm::vec3(1.0f));
 	// 
@@ -1414,9 +1433,27 @@ void Game::Render()
 	pMainProgram->SetUniform("bMultiTexture", false);
 	modelViewMatrixStack.Pop();
 
+	// Glowing edge walls that fade in as the player nears the track boundary
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	glDepthMask(GL_FALSE);
+	glDisable(GL_CULL_FACE);
+	m_pEdgeMarkerProgram->UseProgram();
+	m_pEdgeMarkerProgram->SetUniform("matrices.projMatrix", m_pCamera->GetPerspectiveProjectionMatrix());
+	m_pEdgeMarkerProgram->SetUniform("matrices.modelViewMatrix", viewMatrix);
+	m_pEdgeMarkerProgram->SetUniform("playerPos", m_playerPosition);
+	m_pEdgeMarkerProgram->SetUniform("edgeColor", glm::vec3(1.0f, 0.55f, 0.05f));
+	m_pEdgeMarkerProgram->SetUniform("t", m_t);
+	m_pCatmullRom->RenderEdgeMarkers();
+	glEnable(GL_CULL_FACE);
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
+	pMainProgram->UseProgram();
+
 	pMainProgram->SetUniform("bUseTexture", true);
 	pMainProgram->SetUniform("material1.Md", glm::vec3(0.6f, 0.35f, 0.15f));
 	pMainProgram->SetUniform("material1.Ma", glm::vec3(0.6f, 0.35f, 0.15f));
+	pMainProgram->SetUniform("bCelShading", true);
 	for (auto& log : m_logs) {
 		if (log.active && IsInFrustum(log.position, cullPos, cullDir)) {
 			glm::mat4 modelView = modelViewMatrixStack.Top() * log.transform;
@@ -1425,6 +1462,7 @@ void Game::Render()
 			m_pCylinder->Render();
 		}
 	}
+	pMainProgram->SetUniform("bCelShading", false);
 	pMainProgram->SetUniform("material1.Md", glm::vec3(1.0f));
 	pMainProgram->SetUniform("material1.Ma", glm::vec3(1.0f));
 

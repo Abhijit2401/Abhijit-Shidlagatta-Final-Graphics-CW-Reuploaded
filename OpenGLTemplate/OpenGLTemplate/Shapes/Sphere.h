@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Common.h"
-#include "Texture.h"
-#include "VertexBufferObjectIndexed.h"
+#include "../Common.h"
+#include "../Texture.h"
+#include "../VertexBufferObjectIndexed.h"
 
 // Class for generating a unit sphere
 class CSphere

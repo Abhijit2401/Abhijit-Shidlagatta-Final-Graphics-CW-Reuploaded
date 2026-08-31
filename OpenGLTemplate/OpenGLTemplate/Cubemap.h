@@ -6,8 +6,8 @@
 
 #include "Common.h"
 #include "Texture.h"
-#include "vertexBufferObject.h"
-#include "./include/glm/gtc/type_ptr.hpp"
+#include "VertexBufferObject.h"
+#include "include/glm/gtc/type_ptr.hpp"
 
 // Handles the 6 sided cube texture used for the skybox and car reflections
 class CCubemap

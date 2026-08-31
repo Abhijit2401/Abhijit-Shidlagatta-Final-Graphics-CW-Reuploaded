@@ -5,8 +5,8 @@
 #pragma once
 
 #include "Common.h"
-#include "./include/glm/gtc/type_ptr.hpp"
-#include "./include/glm/gtc/matrix_transform.hpp"
+#include "include/glm/gtc/type_ptr.hpp"
+#include "include/glm/gtc/matrix_transform.hpp"
 
 // Handles the 3D viewport and math matrices for the shaders
 class CCamera {
@@ -27,7 +27,7 @@ public:
 	void SetPerspectiveProjectionMatrix(float fov, float aspectRatio, float nearClippingPlane, float farClippingPlane);
 	void SetOrthographicProjectionMatrix(int width, int height);
 
-	// Nmormal matrix fixes lighting when objects get rotated/scaled
+	// Normal matrix fixes lighting when objects get rotated/scaled
 	glm::mat3 ComputeNormalMatrix(const glm::mat4& modelViewMatrix) const;
 
 	// Camera movement logic

@@ -5,7 +5,7 @@
 // - Extended the CShaderProgram wrapper to support modern GLM data types
 // ---------------------------------------------------------
 #include "Common.h"
-#include "shaders.h"
+#include "Shaders.h"
 
 CShader::CShader() : m_bLoaded(false), m_uiShader(0), m_iType(0) {}
 CShader::~CShader() {}

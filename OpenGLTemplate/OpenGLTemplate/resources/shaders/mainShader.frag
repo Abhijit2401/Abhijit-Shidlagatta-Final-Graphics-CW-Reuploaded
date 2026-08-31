@@ -28,6 +28,7 @@ uniform bool bUseTexture;
 uniform bool renderSkybox;
 uniform bool bMultiTexture;
 uniform bool bTerrainMode;
+uniform bool bCelShading;
 uniform float objectAlpha;
 uniform float t;
 
@@ -85,6 +86,12 @@ float ShadowCalculation(vec4 fragPosLightSpace, float nDotL) {
     return shadow;
 }
 
+// Quantises a 0-1 lighting value into discrete bands for a cel-shaded look
+float CelBand(float value) {
+    const float bands = 4.0;
+    return ceil(value * bands) / bands;
+}
+
 void main() {
     if (objectAlpha > 0.98 && objectAlpha < 1.0) {
         float scanline = sin(worldPosition.y * 5.0 - (worldPosition.x * 2.0)); 
@@ -97,9 +104,14 @@ void main() {
 		vec3 headlightLighting = BlinnPhongSpotlightModel(vEyePos, n);
 		float nDotL = max(dot(n, normalize(sunDirection)), 0.0);
 		float shadow = ShadowCalculation(vFragPosLightSpace, nDotL);
-		vec3 sunDiffuse = sunColor * nDotL * 0.8 * (1.0 - shadow); 
-		vec3 sunAmbient = sunColor * 0.2;         
+		float litAmount = bCelShading ? CelBand(nDotL) : nDotL;
+		vec3 sunDiffuse = sunColor * litAmount * 0.8 * (1.0 - shadow);
+		vec3 sunAmbient = sunColor * 0.2;
 		vec3 finalLighting = headlightLighting + sunDiffuse + sunAmbient;
+		if (bCelShading) {
+			float rim = 1.0 - max(dot(n, normalize(-vEyePos.xyz)), 0.0);
+			finalLighting += material1.Md * smoothstep(0.6, 1.0, rim);
+		}
 		vec4 vTexColour = texture(sampler0, vTexCoord);
 		if (bTerrainMode) {
 			vec4 grass = texture(sampler0, vTexCoord);

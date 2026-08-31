@@ -5,8 +5,8 @@
 #pragma once
 
 #include <windows.h>
-#include "./include/fmod_studio/fmod.hpp"
-#include "./include/fmod_studio/fmod_errors.h"
+#include "include/fmod_studio/fmod.hpp"
+#include "include/fmod_studio/fmod_errors.h"
 
 class CAudio
 {

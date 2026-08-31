@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Texture.h"
-#include "VertexBufferObject.h"
-#include "Common.h"
+#include "../Texture.h"
+#include "../VertexBufferObject.h"
+#include "../Common.h"
 
 // Plane class that can be used to render a flat surface with a texture applied to it
 class CPlane

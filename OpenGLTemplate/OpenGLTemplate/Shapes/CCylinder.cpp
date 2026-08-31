@@ -6,7 +6,7 @@
 // - Dynamic vertex, normal, and UV coordinate calculation
 // - Multi-draw call handling (GL_TRIANGLE_STRIP & GL_TRIANGLE_FAN)
 // ---------------------------------------------------------
-#include "Common.h"
+#include "../Common.h"
 #include "CCylinder.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -14,7 +14,7 @@
 CCylinder::CCylinder() {}
 CCylinder::~CCylinder() {}
 
-void CCylinder::Create(string directory, string filename, float radius, float height, int slices) {
+void CCylinder::Create(const string& directory, const string& filename, float radius, float height, int slices) {
 
 	m_texture.Load(directory + filename, true);
 	m_texture.SetSamplerObjectParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);

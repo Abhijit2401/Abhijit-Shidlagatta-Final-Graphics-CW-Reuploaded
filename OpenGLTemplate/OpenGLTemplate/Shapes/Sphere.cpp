@@ -1,4 +1,4 @@
-#include "Common.h"
+#include "../Common.h"
 #include "Sphere.h"
 
 #define _USE_MATH_DEFINES

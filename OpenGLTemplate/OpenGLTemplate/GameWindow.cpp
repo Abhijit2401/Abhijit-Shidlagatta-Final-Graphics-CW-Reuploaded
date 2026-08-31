@@ -5,7 +5,7 @@
 // - Window naming, dimension handling, and resolution configuration
 // - OpenGL Context and Pixel Format attribute tweaking for a more modern OpenGL
 // ---------------------------------------------------------
-#include "gamewindow.h"
+#include "GameWindow.h"
 #include "include/gl/glew.h"
 #include "include/gl/wglew.h"
 
@@ -205,7 +205,7 @@ void GameWindow::InitOpenGL()
 
 		if (!SetPixelFormat(m_hdc, iPixelFormat, &pfd)) return;
 
-		// Create the old style context (OpenGL 2.1 and before)
+		// Create the modern core-profile context at the requested version
 		m_hrc = wglCreateContextAttribsARB(m_hdc, 0, iContextAttribs);
 		if (m_hrc) wglMakeCurrent(m_hdc, m_hrc);
 		else bError = true;

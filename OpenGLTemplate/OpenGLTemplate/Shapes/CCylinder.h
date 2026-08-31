@@ -4,9 +4,9 @@
 // ---------------------------------------------------------
 #pragma once
 
-#include "Common.h"
-#include "Texture.h"
-#include "VertexBufferObject.h"
+#include "../Common.h"
+#include "../Texture.h"
+#include "../VertexBufferObject.h"
 
 // Generates 3d cylinder mesh with given radius, height and number of slices
 class CCylinder
@@ -15,7 +15,7 @@ public:
 	CCylinder();
 	~CCylinder();
 
-	void Create(string directory, string filename, float radius, float height, int slices);
+	void Create(const string& directory, const string& filename, float radius, float height, int slices);
 	void Render();
 	void Release();
 

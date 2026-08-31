@@ -132,24 +132,23 @@
     <ClInclude Include="FreeTypeFont.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameWindow.h" />
-    <ClInclude Include="Pyramid.h" />
     <ClInclude Include="HighResolutionTimer.h" />
     <ClInclude Include="MatrixStack.h" />
     <ClInclude Include="OpenAssetImportMesh.h" />
-    <ClInclude Include="Plane.h" />
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="Skybox.h" />
-    <ClInclude Include="Sphere.h" />
     <ClInclude Include="Texture.h" />
-    <ClInclude Include="Track.h" />
     <ClInclude Include="VertexBufferObject.h" />
     <ClInclude Include="VertexBufferObjectIndexed.h" />
+    <ClInclude Include="Shapes\CCylinder.h" />
+    <ClInclude Include="Shapes\Plane.h" />
+    <ClInclude Include="Shapes\Pyramid.h" />
+    <ClInclude Include="Shapes\Sphere.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Audio.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CCatmullRom.cpp" />
-    <ClCompile Include="CCylinder.cpp" />
     <ClCompile Include="Cubemap.cpp" />
     <ClCompile Include="FreeTypeFont.cpp" />
     <ClCompile Include="Game.cpp" />
@@ -157,15 +156,15 @@
     <ClCompile Include="HighResolutionTimer.cpp" />
     <ClCompile Include="MatrixStack.cpp" />
     <ClCompile Include="OpenAssetImportMesh.cpp" />
-    <ClCompile Include="Plane.cpp" />
     <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="Skybox.cpp" />
-    <ClCompile Include="Pyramid.cpp" />
-    <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="Track.cpp" />
     <ClCompile Include="VertexBufferObject.cpp" />
     <ClCompile Include="VertexBufferObjectIndexed.cpp" />
+    <ClCompile Include="Shapes\CCylinder.cpp" />
+    <ClCompile Include="Shapes\Plane.cpp" />
+    <ClCompile Include="Shapes\Pyramid.cpp" />
+    <ClCompile Include="Shapes\Sphere.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shaders\bloomComposite.frag" />
@@ -188,6 +187,8 @@
     <None Include="resources\shaders\waterShader.vert" />
     <None Include="resources\shaders\pyramidShader.frag" />
     <None Include="resources\shaders\pyramidShader.vert" />
+    <None Include="resources\shaders\trackEdge.frag" />
+    <None Include="resources\shaders\trackEdge.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

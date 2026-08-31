@@ -4,9 +4,9 @@
 // ---------------------------------------------------------
 #pragma once
 
-#include "Common.h"
-#include "Texture.h"
-#include "VertexBufferObject.h"
+#include "../Common.h"
+#include "../Texture.h"
+#include "../VertexBufferObject.h"
 
 //class for generating a 3D Pyramid with a Square Base
 class CPyramid

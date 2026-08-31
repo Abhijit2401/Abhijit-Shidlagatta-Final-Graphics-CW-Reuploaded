@@ -5,7 +5,7 @@
 // - Custom sunset texture loading and coordinate mapping
 // ---------------------------------------------------------
 #include "Common.h"
-#include "skybox.h"
+#include "Skybox.h"
 
 CSkybox::CSkybox() : m_vao(0) {}
 CSkybox::~CSkybox() {}
@@ -87,7 +87,6 @@ void CSkybox::Render(int textureUnit)
 	m_cubemapTexture.Bind(textureUnit);
 
 	for (int i = 0; i < 6; i++) {
-		//m_textures[i].Bind();
 		glDrawArrays(GL_TRIANGLE_STRIP, (GLint)(i * 4), (GLsizei)4);
 	}
 	glDepthMask(GL_TRUE);
@@ -96,8 +95,6 @@ void CSkybox::Render(int textureUnit)
 // Release the storage assocaited with the skybox
 void CSkybox::Release()
 {
-	//for (int i = 0; i < 6; i++)
-		//m_textures[i].Release();
 	m_cubemapTexture.Release();
 	glDeleteVertexArrays(1, &m_vao);
 	m_vbo.Release();

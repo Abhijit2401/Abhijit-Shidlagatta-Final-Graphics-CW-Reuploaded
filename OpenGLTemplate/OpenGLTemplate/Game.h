@@ -19,11 +19,10 @@ class CSphere;
 class CPyramid;
 class COpenAssetImportMesh;
 class CAudio;
-class CTrack;
 class CCatmullRom;
 class CCylinder;
 
-// Main game class wghich acts as the central hub holding all of the objects and systems
+// Main game class which acts as the central hub holding all of the objects and systems
 class Game {
 private:
 	void Initialise();
@@ -65,6 +64,7 @@ private:
 
 	CShaderProgram* m_pInstancedProgram;
 	CShaderProgram* m_pPyramidProgram;
+	CShaderProgram* m_pEdgeMarkerProgram;
 	CShaderProgram* m_pBrightFilterProgram;
 	CShaderProgram* m_pBloomCompositeProgram;
 	CShaderProgram* m_pBlurProgram;
@@ -80,7 +80,6 @@ private:
 	CPyramid* m_pPyramid;
 	CCylinder* m_pCylinder;
 
-	CTrack* m_pTrack;
 	CCatmullRom* m_pCatmullRom;
 
 	CHighResolutionTimer* m_pHighResolutionTimer;
