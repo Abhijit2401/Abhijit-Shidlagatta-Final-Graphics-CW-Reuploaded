@@ -186,10 +186,8 @@
     <None Include="resources\shaders\textShader.vert" />
     <None Include="resources\shaders\waterShader.frag" />
     <None Include="resources\shaders\waterShader.vert" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="resources\shaders\pyramidShader.frag.txt" />
-    <Text Include="resources\shaders\pyramidShader.vert.txt" />
+    <None Include="resources\shaders\pyramidShader.frag" />
+    <None Include="resources\shaders\pyramidShader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

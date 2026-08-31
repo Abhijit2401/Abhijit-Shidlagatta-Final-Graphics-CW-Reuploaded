@@ -182,9 +182,9 @@ void Game::Initialise()
 
 	// Pyramid shader set up
 	CShader pyrVertShader;
-	pyrVertShader.LoadShader("resources\\shaders\\pyramidShader.vert.txt", GL_VERTEX_SHADER);
+	pyrVertShader.LoadShader("resources\\shaders\\pyramidShader.vert", GL_VERTEX_SHADER);
 	CShader pyrFragShader;
-	pyrFragShader.LoadShader("resources\\shaders\\pyramidShader.frag.txt", GL_FRAGMENT_SHADER);
+	pyrFragShader.LoadShader("resources\\shaders\\pyramidShader.frag", GL_FRAGMENT_SHADER);
 	m_pPyramidProgram = new CShaderProgram;
 	m_pPyramidProgram->CreateProgram();
 	m_pPyramidProgram->AddShaderToProgram(&pyrVertShader);

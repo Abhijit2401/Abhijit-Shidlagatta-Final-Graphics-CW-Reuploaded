@@ -28,6 +28,9 @@ x86/
 [Aa][Rr][Mm]64/
 bld/
 [Bb]in/
+# OpenGLTemplate/bin holds the runtime DLLs (assimp, FreeImage, fmod, glew) the debugger PATH
+# points at - it's a dependency folder, not build output, so keep it tracked
+!OpenGLTemplate/OpenGLTemplate/bin/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
@@ -399,3 +402,12 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Editor/OS backup and metadata files
+*.bak
+desktop.ini
+Thumbs.db
+
+# *.obj above matches compiled object files, but the project also ships Wavefront
+# .obj meshes as assets - keep those tracked
+!OpenGLTemplate/OpenGLTemplate/resources/models/**/*.obj

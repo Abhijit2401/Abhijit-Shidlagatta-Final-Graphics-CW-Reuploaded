@@ -198,13 +198,11 @@
     <None Include="resources\shaders\grassShader.frag">
       <Filter>Shaders</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="resources\shaders\pyramidShader.frag.txt">
+    <None Include="resources\shaders\pyramidShader.frag">
       <Filter>Shaders</Filter>
-    </Text>
-    <Text Include="resources\shaders\pyramidShader.vert.txt">
+    </None>
+    <None Include="resources\shaders\pyramidShader.vert">
       <Filter>Shaders</Filter>
-    </Text>
+    </None>
   </ItemGroup>
 </Project>

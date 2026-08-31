@@ -14,7 +14,7 @@ g  Mesh
 #
 #  Mesh_barrel
 #
-usemtl  Mesh_barrel1
+usemtl  Mesh_barrel
 
 v 0.356608 0.035280 -0.205888
 v 0.411776 0.035280 0.000000
