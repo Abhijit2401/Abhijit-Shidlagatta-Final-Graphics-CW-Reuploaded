@@ -1,0 +1,455 @@
+// ---------------------------------------------------------
+// Author: Abhijit Shidlagatta (210012420)
+// Status: 100% original code (No external code copied).
+// Major logic written by me:
+// - C1 Continuous Cubic Spline Interpolation math
+// - Procedural Track Geometry Generation with dynamic oscillating width
+// - Spline distance mapping to maintain constant car velocity
+// - Terrain-snapping (bank angles dynamically matching terrain normals)
+// - track_config.txt file parsing & spatial raycast debugging fallback
+// ---------------------------------------------------------
+#include "CCatmullRom.h"
+#include "Common.h"
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include <fstream>
+#include <sstream>
+
+CCatmullRom::CCatmullRom()
+{
+	m_vertexCount = 0;
+}
+
+CCatmullRom::~CCatmullRom()
+{
+}
+
+// Cubic spline math: Catmull Rom interpolation formula
+glm::vec3 CCatmullRom::Interpolate(glm::vec3& p0, glm::vec3& p1, glm::vec3& p2, glm::vec3& p3, float t)
+{
+	float t2 = t * t;
+	float t3 = t2 * t;
+
+	glm::vec3 a = p1;
+	glm::vec3 b = 0.5f * (-p0 + p2);
+	glm::vec3 c = 0.5f * (2.0f * p0 - 5.0f * p1 + 4.0f * p2 - p3);
+	glm::vec3 d = 0.5f * (-p0 + 3.0f * p1 - 3.0f * p2 + p3);
+
+	return a + b * t + c * t2 + d * t3;
+}
+
+// Reads the track layout from the text file
+void CCatmullRom::SetControlPoints()
+{
+	m_controlPoints.clear();
+
+	std::ifstream file("resources\\track_config.txt");
+	if (file.is_open()) {
+		OutputDebugStringA("\n[SUCCESS] Loaded track_config.txt!\n");
+		std::string line;
+		while (std::getline(file, line)) {
+			std::istringstream iss(line);
+			float x, y, z;
+			if (iss >> x >> y >> z) {
+				m_controlPoints.push_back(glm::vec3(x, GetTerrainHeight(x, z), z));
+			}
+		}
+		file.close();
+	}
+	else {
+		OutputDebugStringA("\n[FAILED] Could not find resources\\track_config.txt! Loading default track.\n");
+	}
+
+	// Fallback just in case the file gets deleted
+	if (m_controlPoints.size() < 4) {
+		m_controlPoints.clear();
+		auto addPt = [&](float x, float y, float z) { m_controlPoints.push_back(glm::vec3(x, y, z)); };
+
+		// HOW I GENERATED THESE TRACK COORDINATES:
+		// I built a temporary "Track debugger" tool directly into the Game Loop. 
+		// By switching the camera to Free Fly mode (Mode 4), I flew over the terrain
+		// and used the mouse to aim a raycast at the ground. By pressing the 'P' key it
+		// fired a mathematical ray that detected the exact X, Y, and Z world coordinates 
+		// of the terrain collision. It then  appended those coordinates to 
+		// a "track_config.txt" file.  After completing a full lap and selecting all the points, I disabled the debug 
+		// tool in Game.cpp and hardcoded the generated coordinate values below as a safe 
+		// backup in case the text file is ever missing or not working.
+
+		addPt(68.5672f, 102.95f, -828.054f);
+		addPt(33.9641f, 87.3425f, -871.486f);
+		addPt(-1.73622f, 86.9261f, -916.374f);
+		addPt(-39.1636f, 82.7897f, -971.879f);
+		addPt(-106.641f, 71.6682f, -1009.45f);
+		addPt(-168.519f, 61.2173f, -1035.56f);
+		addPt(-234.079f, 60.1893f, -1043.89f);
+		addPt(-296.427f, 58.9924f, -1022.24f);
+		addPt(-315.666f, 64.3925f, -970.189f);
+		addPt(-335.154f, 70.3579f, -925.367f);
+		addPt(-336.085f, 73.4678f, -884.42f);
+		addPt(-338.781f, 76.5188f, -850.83f);
+		addPt(-348.288f, 81.6009f, -815.072f);
+		addPt(-358.238f, 104.036f, -773.799f);
+		addPt(-380.999f, 128.802f, -749.598f);
+		addPt(-410.606f, 150.34f, -732.73f);
+		addPt(-421.665f, 157.96f, -721.83f);
+		addPt(-435.997f, 160.656f, -705.528f);
+		addPt(-448.603f, 155.501f, -679.427f);
+		addPt(-461.435f, 143.034f, -650.712f);
+		addPt(-474.704f, 135.913f, -617.466f);
+		addPt(-490.366f, 142.832f, -583.0f);
+		addPt(-505.97f, 154.329f, -555.257f);
+		addPt(-527.136f, 159.266f, -528.036f);
+		addPt(-558.315f, 147.273f, -507.328f);
+		addPt(-589.066f, 135.995f, -500.106f);
+		addPt(-614.31f, 135.155f, -499.567f);
+		addPt(-637.951f, 142.738f, -499.199f);
+		addPt(-669.633f, 157.606f, -498.576f);
+		addPt(-691.445f, 165.844f, -491.519f);
+		addPt(-718.442f, 162.527f, -480.385f);
+		addPt(-718.318f, 154.548f, -455.329f);
+		addPt(-711.393f, 138.953f, -416.388f);
+		addPt(-695.704f, 130.11f, -377.172f);
+		addPt(-683.949f, 126.128f, -337.483f);
+		addPt(-669.814f, 134.524f, -306.491f);
+		addPt(-658.454f, 144.579f, -277.625f);
+		addPt(-639.574f, 161.533f, -249.792f);
+		addPt(-628.836f, 169.794f, -225.466f);
+		addPt(-611.32f, 178.449f, -196.836f);
+		addPt(-598.083f, 180.545f, -154.287f);
+		addPt(-569.452f, 179.909f, -120.708f);
+		addPt(-555.003f, 176.028f, -84.2509f);
+		addPt(-547.834f, 170.453f, -38.9103f);
+		addPt(-548.944f, 163.482f, 9.27186f);
+		addPt(-558.166f, 154.714f, 42.8436f);
+		addPt(-554.004f, 141.773f, 84.1048f);
+		addPt(-550.877f, 123.51f, 133.407f);
+		addPt(-545.943f, 111.387f, 175.565f);
+		addPt(-540.866f, 115.15f, 209.897f);
+		addPt(-523.012f, 126.464f, 248.31f);
+		addPt(-499.976f, 137.45f, 289.899f);
+		addPt(-471.238f, 144.516f, 315.441f);
+		addPt(-432.012f, 153.686f, 344.08f);
+		addPt(-403.549f, 162.701f, 366.769f);
+		addPt(-374.374f, 175.468f, 390.967f);
+		addPt(-343.93f, 192.515f, 419.788f);
+		addPt(-323.68f, 205.095f, 446.486f);
+		addPt(-312.979f, 211.008f, 484.079f);
+		addPt(-288.913f, 226.531f, 536.849f);
+		addPt(-265.519f, 236.54f, 562.728f);
+		addPt(-237.38f, 239.606f, 594.237f);
+		addPt(-208.018f, 238.346f, 613.816f);
+		addPt(-172.93f, 231.783f, 637.644f);
+		addPt(-137.365f, 226.601f, 654.84f);
+		addPt(-102.352f, 222.382f, 661.976f);
+		addPt(-66.5642f, 217.721f, 662.464f);
+		addPt(-27.4869f, 220.054f, 663.127f);
+		addPt(10.4717f, 228.678f, 672.394f);
+		addPt(49.5556f, 234.467f, 686.885f);
+		addPt(85.3717f, 228.717f, 701.033f);
+		addPt(129.639f, 207.89f, 704.493f);
+		addPt(187.265f, 171.237f, 697.448f);
+		addPt(223.27f, 143.085f, 715.867f);
+		addPt(250.533f, 130.319f, 733.249f);
+		addPt(258.688f, 118.012f, 754.43f);
+		addPt(259.444f, 105.685f, 787.729f);
+		addPt(265.353f, 106.296f, 821.126f);
+		addPt(276.83f, 113.096f, 855.407f);
+		addPt(307.618f, 111.013f, 875.137f);
+		addPt(340.256f, 107.514f, 878.313f);
+		addPt(373.817f, 110.461f, 873.315f);
+		addPt(415.783f, 114.43f, 860.689f);
+		addPt(471.179f, 102.46f, 836.285f);
+		addPt(511.169f, 99.3272f, 817.992f);
+		addPt(548.292f, 108.02f, 795.529f);
+		addPt(587.358f, 101.005f, 761.642f);
+		addPt(629.745f, 72.3712f, 723.757f);
+		addPt(655.042f, 68.3294f, 693.258f);
+		addPt(667.5f, 76.4186f, 665.362f);
+		addPt(685.929f, 88.4519f, 632.17f);
+		addPt(709.714f, 92.8382f, 600.811f);
+		addPt(739.049f, 92.8657f, 577.105f);
+		addPt(767.821f, 103.634f, 553.832f);
+		addPt(789.514f, 116.322f, 529.898f);
+		addPt(807.402f, 120.838f, 491.01f);
+		addPt(839.883f, 87.778f, 416.831f);
+		addPt(863.295f, 87.9598f, 369.638f);
+		addPt(881.894f, 103.639f, 334.16f);
+		addPt(925.208f, 107.831f, 282.917f);
+		addPt(971.834f, 104.425f, 233.37f);
+		addPt(997.064f, 105.165f, 189.895f);
+		addPt(996.345f, 106.004f, 156.373f);
+		addPt(990.098f, 107.029f, 110.732f);
+		addPt(974.406f, 116.366f, 74.3253f);
+		addPt(957.093f, 127.568f, 43.4136f);
+		addPt(936.938f, 137.793f, 11.3754f);
+		addPt(906.488f, 153.191f, -1.26225f);
+		addPt(864.596f, 157.716f, -20.3574f);
+		addPt(821.759f, 148.056f, -42.9172f);
+		addPt(780.16f, 146.219f, -58.7867f);
+		addPt(748.134f, 158.543f, -79.2093f);
+		addPt(710.624f, 186.395f, -118.961f);
+		addPt(684.526f, 205.982f, -148.589f);
+		addPt(654.715f, 221.175f, -175.732f);
+		addPt(629.116f, 223.804f, -203.332f);
+		addPt(597.28f, 219.568f, -233.804f);
+		addPt(554.634f, 205.049f, -282.192f);
+		addPt(531.543f, 195.347f, -318.506f);
+		addPt(507.496f, 190.441f, -361.933f);
+		addPt(492.139f, 189.884f, -405.095f);
+		addPt(467.218f, 197.316f, -427.122f);
+		addPt(438.456f, 203.15f, -445.332f);
+		addPt(414.334f, 203.543f, -460.872f);
+		addPt(380.382f, 196.611f, -480.154f);
+		addPt(343.21f, 177.571f, -516.948f);
+		addPt(312.036f, 160.602f, -544.822f);
+		addPt(281.456f, 147.506f, -560.338f);
+		addPt(235.762f, 134.276f, -581.486f);
+		addPt(227.583f, 153.016f, -637.078f);
+		addPt(218.139f, 167.89f, -675.134f);
+		addPt(207.263f, 175.053f, -699.581f);
+		addPt(190.755f, 178.216f, -729.431f);
+		addPt(163.554f, 170.669f, -759.021f);
+		addPt(123.287f, 144.426f, -785.447f);
+	}
+
+	// Natural terrain banking which tilts the tracks up vectors to match the hills
+	m_controlUpVectors.clear();
+	for (int i = 0; i < m_controlPoints.size(); i++) {
+		glm::vec3 p = m_controlPoints[i];
+		float hL = GetTerrainHeight(p.x - 5.0f, p.z);
+		float hR = GetTerrainHeight(p.x + 5.0f, p.z);
+		float hD = GetTerrainHeight(p.x, p.z - 5.0f);
+		float hU = GetTerrainHeight(p.x, p.z + 5.0f);
+
+		glm::vec3 up = glm::normalize(glm::vec3(hL - hR, 10.0f, hD - hU));
+		m_controlUpVectors.push_back(up);
+	}
+}
+
+// Precomputes the distances along the control points so we can sample the track at a constant speed
+void CCatmullRom::ComputeLengthsAlongControlPoints()
+{
+	int M = (int)m_controlPoints.size();
+	float fAccumulatedLength = 0.0f;
+	m_distances.push_back(fAccumulatedLength);
+
+	for (int i = 1; i < M; i++) {
+		fAccumulatedLength += glm::distance(m_controlPoints[i - 1], m_controlPoints[i]);
+		m_distances.push_back(fAccumulatedLength);
+	}
+
+	fAccumulatedLength += glm::distance(m_controlPoints[M - 1], m_controlPoints[0]);
+	m_distances.push_back(fAccumulatedLength);
+}
+
+// Grabs the exact 3D point and up vector for any distance along the track
+bool CCatmullRom::Sample(float d, glm::vec3& p, glm::vec3& up)
+{
+	if (d < 0) return false;
+
+	int M = (int)m_controlPoints.size();
+	if (M == 0) return false;
+
+	float fTotalLength = m_distances[m_distances.size() - 1];
+	float fLength = d - (int)(d / fTotalLength) * fTotalLength;
+
+	int j = -1;
+	for (int i = 0; i < (int)m_distances.size() - 1; i++) {
+		if (fLength >= m_distances[i] && fLength < m_distances[i + 1]) {
+			j = i;
+			break;
+		}
+	}
+
+	if (j == -1) return false;
+
+	float fSegmentLength = m_distances[j + 1] - m_distances[j];
+	float t = (fLength - m_distances[j]) / fSegmentLength;
+
+	int iPrev = ((j - 1) + M) % M;
+	int iCur = j;
+	int iNext = (j + 1) % M;
+	int iNextNext = (j + 2) % M;
+
+	p = Interpolate(m_controlPoints[iPrev], m_controlPoints[iCur], m_controlPoints[iNext], m_controlPoints[iNextNext], t);
+	if (m_controlUpVectors.size() == m_controlPoints.size()) {
+		up = glm::normalize(Interpolate(m_controlUpVectors[iPrev], m_controlUpVectors[iCur], m_controlUpVectors[iNext], m_controlUpVectors[iNextNext], t));
+	}
+
+	return true;
+}
+
+void CCatmullRom::UniformlySampleControlPoints(int numSamples)
+{
+	glm::vec3 p, up;
+
+	ComputeLengthsAlongControlPoints();
+	float fTotalLength = m_distances[m_distances.size() - 1];
+	float fSpacing = fTotalLength / numSamples;
+
+	for (int i = 0; i < numSamples; i++) {
+		Sample(i * fSpacing, p, up);
+		m_centrelinePoints.push_back(p);
+		if (m_controlUpVectors.size() > 0)
+			m_centrelineUpVectors.push_back(up);
+	}
+
+	m_controlPoints = m_centrelinePoints;
+	m_controlUpVectors = m_centrelineUpVectors;
+	m_centrelinePoints.clear();
+	m_centrelineUpVectors.clear();
+	m_distances.clear();
+
+	ComputeLengthsAlongControlPoints();
+
+	fTotalLength = m_distances[m_distances.size() - 1];
+	fSpacing = fTotalLength / numSamples;
+
+	for (int i = 0; i < numSamples; i++) {
+		Sample(i * fSpacing, p, up);
+		m_centrelinePoints.push_back(p);
+		if (m_controlUpVectors.size() > 0)
+			m_centrelineUpVectors.push_back(up);
+	}
+}
+
+void CCatmullRom::CreateCentreline()
+{
+	SetControlPoints();
+	UniformlySampleControlPoints(1000);
+
+	glGenVertexArrays(1, &m_vaoCentreline);
+	glBindVertexArray(m_vaoCentreline);
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, m_centrelinePoints.size() * sizeof(glm::vec3), &m_centrelinePoints[0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+}
+
+void CCatmullRom::CreateOffsetCurves()
+{
+	for (int i = 0; i < m_centrelinePoints.size(); i++) {
+		glm::vec3 p = m_centrelinePoints[i];
+		glm::vec3 pNext = m_centrelinePoints[(i + 1) % m_centrelinePoints.size()];
+		// tangent vector along the track
+		glm::vec3 T = glm::normalize(pNext - p);
+		glm::vec3 UP = m_centrelineUpVectors[i];
+		glm::vec3 N = glm::normalize(glm::cross(T, UP));
+		// dynamic width of the track, oscillates between 12 and 24 units
+		float dynamicWidth = 18.0f + (sin(i * 0.03f) * 6.0f);
+
+		glm::vec3 leftP = p - (N * dynamicWidth);
+		glm::vec3 rightP = p + (N * dynamicWidth);
+
+		m_leftOffsetPoints.push_back(leftP);
+		m_rightOffsetPoints.push_back(rightP);
+	}
+	// Generate VAOs for offset curves
+	glGenVertexArrays(1, &m_vaoLeftOffsetCurve);
+	glBindVertexArray(m_vaoLeftOffsetCurve);
+	GLuint vboL;
+	glGenBuffers(1, &vboL);
+	glBindBuffer(GL_ARRAY_BUFFER, vboL);
+	glBufferData(GL_ARRAY_BUFFER, m_leftOffsetPoints.size() * sizeof(glm::vec3), &m_leftOffsetPoints[0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glGenVertexArrays(1, &m_vaoRightOffsetCurve);
+	glBindVertexArray(m_vaoRightOffsetCurve);
+	GLuint vboR;
+	glGenBuffers(1, &vboR);
+	glBindBuffer(GL_ARRAY_BUFFER, vboR);
+	glBufferData(GL_ARRAY_BUFFER, m_rightOffsetPoints.size() * sizeof(glm::vec3), &m_rightOffsetPoints[0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+}
+
+void CCatmullRom::CreateTrack(string path, string textureFile1, string textureFile2)
+{
+	// Load multi-textures for the track
+	m_texture.Load(path + textureFile1);
+	m_texture.SetSamplerObjectParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	m_texture.SetSamplerObjectParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	m_texture.SetSamplerObjectParameter(GL_TEXTURE_WRAP_S, GL_REPEAT);
+	m_texture.SetSamplerObjectParameter(GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	m_texture2.Load(path + textureFile2);
+	m_texture2.SetSamplerObjectParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	m_texture2.SetSamplerObjectParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	m_texture2.SetSamplerObjectParameter(GL_TEXTURE_WRAP_S, GL_REPEAT);
+	m_texture2.SetSamplerObjectParameter(GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	// Generate a VAO called m_vaoTrack and a VBO for track geometry
+	glGenVertexArrays(1, &m_vaoTrack);
+	glBindVertexArray(m_vaoTrack);
+
+	vector<float> vertexData;
+	for (int i = 0; i < m_centrelinePoints.size(); i++) {
+		glm::vec3 L = m_leftOffsetPoints[i];
+		glm::vec3 R = m_rightOffsetPoints[i];
+		glm::vec3 T = glm::normalize(m_centrelinePoints[(i + 1) % m_centrelinePoints.size()] - m_centrelinePoints[i]);
+
+		glm::vec3 UP = m_centrelineUpVectors[i];
+		glm::vec3 N = glm::normalize(glm::cross(T, UP));
+		glm::vec3 B = glm::normalize(glm::cross(N, T));
+
+		// Left vertex (Pos, UV, Normal)
+		vertexData.push_back(L.x); vertexData.push_back(L.y); vertexData.push_back(L.z);
+		vertexData.push_back(0.0f); vertexData.push_back((float)i * 0.1f);
+		vertexData.push_back(B.x); vertexData.push_back(B.y); vertexData.push_back(B.z);
+
+		// Right vertex (Pos, UV, Normal)
+		vertexData.push_back(R.x); vertexData.push_back(R.y); vertexData.push_back(R.z);
+		vertexData.push_back(1.0f); vertexData.push_back((float)i * 0.1f);
+		vertexData.push_back(B.x); vertexData.push_back(B.y); vertexData.push_back(B.z);
+	}
+
+	GLuint vboTrack;
+	glGenBuffers(1, &vboTrack);
+	glBindBuffer(GL_ARRAY_BUFFER, vboTrack);
+	glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float), &vertexData[0], GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+	// The vertex count is twice the number of centreline points because each point has a left and right vertex
+	m_vertexCount = (unsigned int)(m_centrelinePoints.size() * 2);
+}
+
+void CCatmullRom::RenderCentreline()
+{
+	glBindVertexArray(m_vaoCentreline);
+	glDrawArrays(GL_LINE_STRIP, 0, (GLsizei)m_centrelinePoints.size());
+}
+
+void CCatmullRom::RenderOffsetCurves()
+{
+	glBindVertexArray(m_vaoLeftOffsetCurve);
+	glDrawArrays(GL_LINE_STRIP, 0, (GLsizei)m_leftOffsetPoints.size());
+
+	glBindVertexArray(m_vaoRightOffsetCurve);
+	glDrawArrays(GL_LINE_STRIP, 0, (GLsizei)m_rightOffsetPoints.size());
+}
+
+void CCatmullRom::RenderTrack()
+{
+	glActiveTexture(GL_TEXTURE0);
+	m_texture.Bind();
+	glActiveTexture(GL_TEXTURE1);
+	m_texture2.Bind();
+
+	glBindVertexArray(m_vaoTrack);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, m_vertexCount);
+}
+
+int CCatmullRom::CurrentLap(float d)
+{
+	return (int)(d / m_distances.back());
+}
+
+glm::vec3 CCatmullRom::_dummy_vector(0.0f, 0.0f, 0.0f);
