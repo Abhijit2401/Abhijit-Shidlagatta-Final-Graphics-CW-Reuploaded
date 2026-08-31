@@ -76,6 +76,7 @@ const int       BOOST_COUNT = 10;
 const float     BOOST_SPACING = 500.0f;
 const float     BOOST_HITBOX = 12.0f;
 const float     CONE_SPACING = 20.0f;
+const int       MSAA_SAMPLES = 4;
 
 Game::Game() : m_gameWindow(GameWindow::GetInstance())
 {
@@ -240,7 +241,23 @@ void Game::Initialise()
 	int fbWidth = clientRect.right - clientRect.left;
 	int fbHeight = clientRect.bottom - clientRect.top;
 
-	// FBO 1 Main scene
+	glEnable(GL_MULTISAMPLE);
+
+	// Multisampled scene target - the whole 3D scene renders here, then gets resolved into FBO 1 below
+	glGenFramebuffers(1, &m_msaaFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_msaaFBO);
+
+	glGenRenderbuffers(1, &m_msaaColorBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_msaaColorBuffer);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, MSAA_SAMPLES, GL_RGB16F, fbWidth, fbHeight);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_msaaColorBuffer);
+
+	glGenRenderbuffers(1, &m_msaaDepthBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_msaaDepthBuffer);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, MSAA_SAMPLES, GL_DEPTH_COMPONENT24, fbWidth, fbHeight);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_msaaDepthBuffer);
+
+	// FBO 1 Main scene (resolve target for the multisampled render above)
 	glGenFramebuffers(1, &m_fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 	glGenTextures(1, &m_renderTexture);
@@ -1153,6 +1170,14 @@ void Game::RenderParticlesPass(CShaderProgram* pMainProgram, glutil::MatrixStack
 
 void Game::RenderPostProcessingPass()
 {
+	// Resolves the multisampled scene into FBO 1 so the rest of the pipeline can sample it normally
+	RECT dimensions = m_gameWindow.GetDimensions();
+	int width = dimensions.right - dimensions.left;
+	int height = dimensions.bottom - dimensions.top;
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_msaaFBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
+	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
@@ -1216,7 +1241,7 @@ void Game::Render()
 
 	RenderShadowMap(lightSpaceMatrix, carModel);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_msaaFBO);
 	RECT dimensions = m_gameWindow.GetDimensions();
 	glViewport(0, 0, dimensions.right - dimensions.left, dimensions.bottom - dimensions.top);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

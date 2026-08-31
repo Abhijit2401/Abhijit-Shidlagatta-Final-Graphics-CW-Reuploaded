@@ -85,6 +85,11 @@ private:
 	CHighResolutionTimer* m_pHighResolutionTimer;
 	CAudio* m_pAudio;
 
+	// Multisampled scene target, resolved into fbo before post-processing so the scene is antialiased
+	GLuint m_msaaFBO;
+	GLuint m_msaaColorBuffer;
+	GLuint m_msaaDepthBuffer;
+
 	// Post processing framebuffers (fbo = main scene, fbo2 = brighter spots, fbo3 = bloom combined)
 	GLuint m_fbo;
 	GLuint m_renderTexture;
